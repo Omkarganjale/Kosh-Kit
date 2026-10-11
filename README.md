@@ -1,12 +1,14 @@
-# KoshKit — Post-Tax Drag & TDS Compounding Simulator
+# KoshKit — Personal Finance Calculators
 
 **Live demo:** https://koshkit.vercel.app
+
+# Post-Tax Drag & TDS Compounding Simulator
 
 Most people compare nominal interest rates (e.g. a 7.5% Fixed Deposit vs. a
 7.5% debt or arbitrage fund) without accounting for **tax timing**. In an FD,
 tax is cut as TDS every period, which shrinks the base available to compound
 next period. In a tax-deferred fund, the full pre-tax corpus keeps compounding
-until withdrawal. Same rate — different outcomes, purely because of *when* tax
+until withdrawal. Same rate — different outcomes, purely because of _when_ tax
 is paid.
 
 This app makes that divergence visible: enter an amount, rate, horizon, and tax
@@ -20,7 +22,7 @@ slab, and it shows the growing gap between the two legs plus the exact rupee
   hurdle rate to match the deferred fund.
 - **Divergence chart** — deferred vs post-TDS growth with the leakage wedge
   shaded; hover any year for an inspection snapshot. Toggle to the
-  *Cumulative Tax Drain* view to compare TDS already paid vs deferred tax still
+  _Cumulative Tax Drain_ view to compare TDS already paid vs deferred tax still
   compounding.
 - **Tax anatomy waterfall** — rupee-for-rupee split of the potential corpus
   into principal, in-pocket gain, exit tax, and timing drag.
@@ -51,7 +53,7 @@ Default example — ₹10L, 7.5%, 10Y, 31.2% slab, quarterly: FD ≈ ₹16.70L,
 deferred net ≈ ₹17.58L, leakage ≈ ₹88.6k, XIRR ≈ 5.26%, hurdle ≈ 8.26%.
 
 > Note: real debt/arbitrage fund taxation depends on holding period and asset
-> class. This tool isolates the *timing* effect of tax, not the tax code.
+> class. This tool isolates the _timing_ effect of tax, not the tax code.
 
 ## Getting started
 
