@@ -1,13 +1,56 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>kosh-kit</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>KoshKit - Personal Finance Tools</title>
+		<meta
+			name="description"
+			content="Compare FD vs tax-deferred fund growth at the same nominal rate. See how annual TDS interrupts compounding, with compounding leakage, post-tax XIRR, and year-by-year audit."
+		/>
+		<meta
+			name="theme-color"
+			content="#1B4332"
+			media="(prefers-color-scheme: light)"
+		/>
+		<meta
+			name="theme-color"
+			content="#121316"
+			media="(prefers-color-scheme: dark)"
+		/>
+
+		<!-- Favicons: KoshKit K-mark, one per color scheme (see src/assets/logo-*-04-favicon.png) -->
+		<link
+			rel="icon"
+			type="image/png"
+			href="/favicon-light.png"
+			media="(prefers-color-scheme: light)"
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			href="/favicon-dark.png"
+			media="(prefers-color-scheme: dark)"
+		/>
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+		<meta property="og:title" content="KoshKit - Personal Finance Tools" />
+		<meta
+			property="og:description"
+			content="Same rate, different tax timing: FD tax paid yearly vs mutual fund tax deferred to withdrawal. Visualize the divergence and the rupee leakage."
+		/>
+		<meta property="og:type" content="website" />
+
+		<!-- Typography per src/assets/Design-Scheme.html: Newsreader (serif) + Inter (UI) + JetBrains Mono (figures) -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.tsx"></script>
+	</body>
 </html>

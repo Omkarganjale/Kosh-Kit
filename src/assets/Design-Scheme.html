@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KoshKit — Simulation Results & Tax Drag</title>
+
+  <!-- Typography: Newsreader (Serif), Inter (Sans UI), JetBrains Mono (Figures) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* -------------------------------------------------------------
+       1. TOKENS & SYSTEM VARIABLES
+       ------------------------------------------------------------- */
+    :root {
+      --font-serif: "Newsreader", Charter, Georgia, serif;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      --radius: 6px;
+    }
+
+    /* LIGHT THEME: Nordic Pine (Rich Evergreen Typography) */
+    :root[data-theme="light"] {
+      --bg-app: #F4F6F4;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #E8EFEA;
+      --border-subtle: #D6E0D8;
+      --border-strong: #B8C7BC;
+      
+      /* Distinct Nordic Pine Green Fonts */
+      --text-heading: #123524;         /* Deep Cypress Pine for primary titles */
+      --text-section: #1B4332;         /* Rich Evergreen for section headers */
+      --text-main: #142820;            /* Deep Pine ink for body copy & metrics */
+      --text-muted: #3D5A4C;           /* Muted Sage Moss for subtext & labels */
+      
+      --accent: #1B4332;               /* British Racing Pine for primary actions */
+      --accent-text: #FFFFFF;
+      --accent-soft: rgba(27, 67, 50, 0.08);
+      
+      --success: #15803D;
+      --success-bg: #ECFDF5;
+      --danger: #C2410C;              /* Terracotta rust for drag & tax penalties */
+      --danger-bg: #FFF7ED;
+      --badge-neutral-bg: #E8EFEA;
+      --badge-neutral-text: #1B4332;
+      
+      --chart-line-gross: #1B4332;
+      --chart-line-net: #526058;
+      --chart-fill-wedge: rgba(194, 65, 12, 0.12);
+      --card-shadow: 0 1px 3px rgba(18, 53, 36, 0.06);
+      --table-hover: rgba(27, 67, 50, 0.03);
+    }
+
+    /* DARK THEME: Obsidian & Champagne */
+    :root[data-theme="dark"] {
+      --bg-app: #121316;
+      --bg-surface: #1A1B20;
+      --bg-subtle: #22232A;
+      --border-subtle: #27272E;
+      --border-strong: #3A3A45;
+      
+      --text-heading: #C5A880;         /* Brushed Champagne Gold for titles */
+      --text-section: #C5A880;         /* Champagne for section headers */
+      --text-main: #F4F4F5;            /* Soft White body */
+      --text-muted: #A1A1AA;           /* Silver Gray */
+      
+      --accent: #C5A880;
+      --accent-text: #121316;
+      --accent-soft: rgba(197, 168, 128, 0.12);
+      
+      --success: #34D399;
+      --success-bg: rgba(52, 211, 153, 0.12);
+      --danger: #FB7185;
+      --danger-bg: rgba(251, 113, 133, 0.12);
+      --badge-neutral-bg: #27272E;
+      --badge-neutral-text: #D4D4D8;
+      
+      --chart-line-gross: #C5A880;
+      --chart-line-net: #A1A1AA;
+      --chart-fill-wedge: rgba(251, 113, 133, 0.15);
+      --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      --table-hover: rgba(255, 255, 255, 0.02);
+    }
+
+    /* -------------------------------------------------------------
+       2. BASE RESET & LAYOUT
+       ------------------------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 24px 20px 64px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .tnum {
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1080px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* -------------------------------------------------------------
+       3. TOP UTILITY NAVBAR & HEADER
+       ------------------------------------------------------------- */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo {
+      height: 34px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    :root[data-theme="light"] .logo-dark { display: none; }
+    :root[data-theme="light"] .logo-light { display: block; }
+    :root[data-theme="dark"] .logo-light { display: none; }
+    :root[data-theme="dark"] .logo-dark { display: block; }
+
+    .brand-divider {
+      width: 1px;
+      height: 24px;
+      background-color: var(--border-subtle);
+    }
+
+    .module-pill {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-section);
+      background-color: var(--badge-neutral-bg);
+      padding: 3px 8px;
+      border-radius: var(--radius);
+    }
+
+    .toggle-btn {
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .toggle-btn:hover { border-color: var(--accent); }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-top: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 16px;
+    }
+
+    .page-title {
+      font-family: var(--font-serif);
+      font-size: 2.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--text-heading);
+    }
+
+    .page-sub {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .meta-tags {
+      display: flex;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.6875rem;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-success { background: var(--success-bg); color: var(--success); }
+    .badge-danger  { background: var(--danger-bg);  color: var(--danger); }
+    .badge-neutral { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
+
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-section);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background-color: var(--border-subtle);
+    }
+
+    /* -------------------------------------------------------------
+       SECTION 1: HERO METRIC & EXECUTIVE CARDS
+       ------------------------------------------------------------- */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .hero-grid { grid-template-columns: 1fr; }
+    }
+
+    .hero-card {
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .hero-card.primary-highlight {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-surface) 60%);
+    }
+
+    .hero-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .hero-value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+    }
+
+    .hero-card.wealth-gain .hero-value {
+      color: var(--text-section);
+    }
+
+    .hero-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+
+    .hero-subtext {
+      color: var(--text-muted);
+      font-size: 0.6875rem;
+    }
+
+    /* -------------------------------------------------------------
+       SECTION 2: PRIMARY VISUALIZATION (DIVERGENCE CURVE)
+       ------------------------------------------------------------- */
+    .chart-panel {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .pill-switcher {
+      display: inline-flex;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .pill-btn {
+      background: transparent;
+      border: none;
+      padding: 6px 14px;
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .pill-btn.active {
+      background-color: var(--bg-surface);
+      color: var(--text-section);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      font-weight: 700;
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-line {
+      width: 14px;
+      height: 2.5px;
+      border-radius: 2px;
+    }
+
+    .legend-area {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background-color: var(--chart-fill-wedge);
+      border: 1px dashed var(--danger);
+    }
+
+    .svg-container {
+      width: 100%;
+      height: 280px;
+      position: relative;
+    }
+
+    .svg-container svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .chart-grid-line {
+      stroke: var(--border-subtle);
+      stroke-dasharray: 4 4;
+      stroke-width: 1;
+    }
+
+    .chart-axis-text {
+      font-size: 11px;
+      fill: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .chart-inspection-card {
+      position: absolute;
+      top: 40px;
+      right: 48px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 0.75rem;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .inspection-title {
+      font-weight: 700;
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-section);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 4px;
+    }
+
+    .inspection-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    /* -------------------------------------------------------------
+       SECTION 3: TAX ANATOMY & WATERFALL BREAKDOWN
+       ------------------------------------------------------------- */
+    .waterfall-panel {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .stacked-proportion-track {
+      width: 100%;
+      height: 36px;
+      display: flex;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .bar-segment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 0.02em;
+      cursor: default;
+    }
+
+    .seg-principal { background-color: var(--text-muted); width: 40%; }
+    .seg-gain      { background-color: var(--text-section); width: 32%; }
+    .seg-tax       { background-color: var(--text-main);  width: 16%; opacity: 0.9; }
+    .seg-drag      { background-color: var(--danger);     width: 12%; }
+
+    .waterfall-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 820px) {
+      .waterfall-cards-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .wf-card {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 16px;
+      background-color: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .wf-badge-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .wf-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .wf-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .wf-sub {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+    }
+
+    /* -------------------------------------------------------------
+       SECTION 4: GRANULAR AUDIT LEDGER
+       ------------------------------------------------------------- */
+    .ledger-panel {
+      overflow: hidden;
+    }
+
+    .ledger-top-bar {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-btn:hover { border-color: var(--accent); color: var(--text-section); }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.8125rem;
+    }
+
+    th {
+      background-color: var(--bg-app);
+      color: var(--text-muted);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    td strong {
+      color: var(--text-section);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: var(--table-hover); }
+
+    .text-right { text-align: right; }
+    .negative-num { color: var(--danger); }
+    .positive-num { color: var(--text-section); }
+
+    tfoot td {
+      background-color: var(--bg-subtle);
+      font-weight: 700;
+      color: var(--text-section);
+      border-top: 2px solid var(--border-strong);
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- BRAND NAVBAR WITH KOSHKIT LOGO & THEME SWITCHER -->
+    <nav class="top-nav">
+      <div class="brand-cluster">
+        <img 
+          src="logo-light-01-primary-horizontal.png" 
+          alt="KoshKit Growth & Drag" 
+          class="brand-logo logo-light"
+        />
+        <img 
+          src="logo-dark-01-primary-horizontal.png" 
+          alt="KoshKit Growth & Drag" 
+          class="brand-logo logo-dark"
+        />
+        <div class="brand-divider"></div>
+        <span class="module-pill">Fixed-Income Drag Engine</span>
+      </div>
+
+      <button class="toggle-btn" id="themeBtn" onclick="toggleTheme()">
+        <span class="dot"></span>
+        <span id="btnLabel">Switch to Obsidian & Champagne</span>
+      </button>
+    </nav>
+
+    <!-- EDITORIAL HEADER BLOCK (Rendered in Cypress Pine) -->
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Simulation Results &amp; Anatomy</h1>
+        <p class="page-sub">
+          Scenario modeling 10-year holding periods comparing quarterly TDS drag versus tax-deferred growth.
+        </p>
+      </div>
+      <div class="meta-tags">
+        <span class="badge badge-neutral">Corpus: ₹10,00,000</span>
+        <span class="badge badge-neutral">Rate: 7.50%</span>
+        <span class="badge badge-neutral">Slab: 31.2%</span>
+      </div>
+    </header>
+
+    <!-- SECTION 1: HERO METRIC & EXECUTIVE CARDS -->
+    <section>
+      <div class="section-title">Section 1: Hero Metric &amp; Executive Summary</div>
+      <div class="hero-grid">
+        
+        <!-- Hero Card 1: Compounding Leakage -->
+        <div class="card hero-card primary-highlight">
+          <span class="hero-label">Compounding Leakage</span>
+          <span class="hero-value tnum negative-num">-₹3,42,850</span>
+          <div class="hero-footer">
+            <span class="badge badge-danger tnum">-1.14% Drag</span>
+            <span class="hero-subtext">Pure timing loss</span>
+          </div>
+        </div>
+
+        <!-- Hero Card 2: Net Terminal Wealth -->
+        <div class="card hero-card wealth-gain">
+          <span class="hero-label">Net Terminal Wealth</span>
+          <span class="hero-value tnum">₹20,61,032</span>
+          <div class="hero-footer">
+            <span class="badge badge-neutral tnum" style="color: var(--text-section);">+₹10.61L Gain</span>
+            <span class="hero-subtext">Post-TDS corpus</span>
+          </div>
+        </div>
+
+        <!-- Hero Card 3: Realized Post-Tax XIRR -->
+        <div class="card hero-card">
+          <span class="hero-label">Realized Post-Tax XIRR</span>
+          <span class="hero-value tnum">5.16%</span>
+          <div class="hero-footer">
+            <span class="badge badge-neutral tnum">-234 bps</span>
+            <span class="hero-subtext">vs 7.50% Nominal</span>
+          </div>
+        </div>
+
+        <!-- Hero Card 4: Required FD Hurdle Rate -->
+        <div class="card hero-card">
+          <span class="hero-label">Required FD Hurdle Rate</span>
+          <span class="hero-value tnum">8.92%</span>
+          <div class="hero-footer">
+            <span class="badge badge-neutral tnum">+142 bps spread</span>
+            <span class="hero-subtext">to match deferred fund</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 2: PRIMARY VISUALIZATION (DIVERGENCE CURVE) -->
+    <section>
+      <div class="section-title">Section 2: Primary Visualization (Divergence Curve)</div>
+      <div class="card chart-panel">
+        
+        <div class="chart-header">
+          <div class="pill-switcher">
+            <button class="pill-btn active" id="btnWedge" onclick="switchChartView('wedge')">Gross vs. Post-Tax Wedge</button>
+            <button class="pill-btn" id="btnDrain" onclick="switchChartView('drain')">Cumulative Tax Drain</button>
+          </div>
+
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-line" style="background-color: var(--chart-line-gross);"></span>
+              <span>Tax-Deferred Growth (No TDS)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-line" style="background-color: var(--chart-line-net);"></span>
+              <span>FD Net Reinvested (Post-TDS)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-area"></span>
+              <span style="color: var(--danger);">Compounding Leakage Wedge</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="svg-container">
+          <svg viewBox="0 0 900 240" preserveAspectRatio="none">
+            <line x1="40" y1="20" x2="880" y2="20" class="chart-grid-line" />
+            <line x1="40" y1="75" x2="880" y2="75" class="chart-grid-line" />
+            <line x1="40" y1="130" x2="880" y2="130" class="chart-grid-line" />
+            <line x1="40" y1="185" x2="880" y2="185" class="chart-grid-line" />
+
+            <!-- Wedge Area Shading -->
+            <polygon 
+              points="40,185 124,175 208,162 292,146 376,128 460,107 544,83 628,57 712,28 796,-4 880,-40 880,48 796,70 712,94 628,118 544,141 460,162 376,178 292,185 40,185" 
+              fill="var(--chart-fill-wedge)" 
+            />
+
+            <!-- Top Curve: Tax-Deferred Compounding -->
+            <path 
+              d="M 40,185 Q 360,150 880,-40" 
+              fill="none" 
+              stroke="var(--chart-line-gross)" 
+              stroke-width="2.5" 
+            />
+
+            <!-- Bottom Curve: Fixed Deposit Post-TDS -->
+            <path 
+              d="M 40,185 Q 400,165 880,48" 
+              fill="none" 
+              stroke="var(--chart-line-net)" 
+              stroke-width="2" 
+              stroke-dasharray="2 1"
+            />
+
+            <!-- Scrubbing Crosshair (Year 7) -->
+            <line x1="628" y1="10" x2="628" y2="200" stroke="var(--border-strong)" stroke-width="1.5" />
+            <circle cx="628" cy="57" r="4.5" fill="var(--chart-line-gross)" />
+            <circle cx="628" cy="118" r="4.5" fill="var(--danger)" />
+
+            <text x="40" y="215" class="chart-axis-text">Y0</text>
+            <text x="124" y="215" class="chart-axis-text">Y1</text>
+            <text x="208" y="215" class="chart-axis-text">Y2</text>
+            <text x="292" y="215" class="chart-axis-text">Y3</text>
+            <text x="376" y="215" class="chart-axis-text">Y4</text>
+            <text x="460" y="215" class="chart-axis-text">Y5</text>
+            <text x="544" y="215" class="chart-axis-text">Y6</text>
+            <text x="628" y="215" class="chart-axis-text" font-weight="700" fill="var(--text-section)">Y7</text>
+            <text x="712" y="215" class="chart-axis-text">Y8</text>
+            <text x="796" y="215" class="chart-axis-text">Y9</text>
+            <text x="880" y="215" class="chart-axis-text">Y10</text>
+          </svg>
+
+          <div class="chart-inspection-card">
+            <span class="inspection-title">Inspection Snapshot (Year 7)</span>
+            <div class="inspection-row">
+              <span style="color: var(--text-muted);">Deferred Value:</span>
+              <strong class="tnum" style="color: var(--text-section);">₹16,59,000</strong>
+            </div>
+            <div class="inspection-row">
+              <span style="color: var(--text-muted);">Post-TDS Value:</span>
+              <strong class="tnum">₹14,21,450</strong>
+            </div>
+            <div class="inspection-row" style="color: var(--danger); border-top: 1px dashed var(--border-subtle); padding-top: 4px;">
+              <span>Compounding Drag:</span>
+              <strong class="tnum">-₹2,37,550</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: TAX ANATOMY & WATERFALL BREAKDOWN -->
+    <section>
+      <div class="section-title">Section 3: Tax Anatomy &amp; Waterfall Breakdown</div>
+      <div class="card waterfall-panel">
+        
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: var(--text-section);">Rupee-for-Rupee Distribution Matrix</span>
+            <span class="tnum" style="color: var(--text-muted);">Total Potential Corpus: ₹24,03,882</span>
+          </div>
+          
+          <div class="stacked-proportion-track">
+            <div class="bar-segment seg-principal" title="Principal Capital">Principal (41.6%)</div>
+            <div class="bar-segment seg-gain" title="Net Retained Gain">Pure Gain (44.1%)</div>
+            <div class="bar-segment seg-drag" title="Compounding Leakage">Drag (14.3%)</div>
+          </div>
+        </div>
+
+        <div class="waterfall-cards-grid">
+          
+          <div class="wf-card">
+            <div class="wf-header">
+              <span class="wf-badge-indicator" style="background-color: var(--text-muted);"></span>
+              <span>1. Base Principal</span>
+            </div>
+            <span class="wf-val tnum">₹10,00,000</span>
+            <span class="wf-sub">Initial capital deployed</span>
+          </div>
+
+          <div class="wf-card">
+            <div class="wf-header">
+              <span class="wf-badge-indicator" style="background-color: var(--text-section);"></span>
+              <span>2. Net In-Pocket Gain</span>
+            </div>
+            <span class="wf-val tnum positive-num">+₹10,61,032</span>
+            <span class="wf-sub">Actual profit credited</span>
+          </div>
+
+          <div class="wf-card">
+            <div class="wf-header">
+              <span class="wf-badge-indicator" style="background-color: var(--text-main);"></span>
+              <span>3. Direct TDS Remitted</span>
+            </div>
+            <span class="wf-val tnum">-₹4,79,150</span>
+            <span class="wf-sub">Tax paid to authorities</span>
+          </div>
+
+          <div class="wf-card">
+            <div class="wf-header">
+              <span class="wf-badge-indicator" style="background-color: var(--danger);"></span>
+              <span>4. Compounding Drag</span>
+            </div>
+            <span class="wf-val tnum negative-num">-₹3,42,850</span>
+            <span class="wf-sub">Loss from early tax exits</span>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 4: GRANULAR AUDIT LEDGER -->
+    <section>
+      <div class="section-title">Section 4: Granular Audit Ledger</div>
+      <div class="card ledger-panel">
+        
+        <div class="ledger-top-bar">
+          <div class="pill-switcher">
+            <button class="pill-btn active" id="viewAnnual" onclick="switchLedgerView('annual')">Annual Summary (Default)</button>
+            <button class="pill-btn" id="viewQuarter" onclick="switchLedgerView('quarters')">All 40 Quarters</button>
+          </div>
+
+          <div class="export-actions">
+            <button class="action-btn" onclick="alert('CSV Copied to clipboard')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy CSV</span>
+            </button>
+            <button class="action-btn" onclick="alert('Preparing tear-sheet export')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Download Tear-Sheet</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th class="text-right">Opening Balance</th>
+                <th class="text-right">Gross Accrued</th>
+                <th class="text-right">TDS (31.2%)</th>
+                <th class="text-right">Net Reinvested</th>
+                <th class="text-right">Closing Balance</th>
+                <th class="text-right">Cumulative Drag</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Year 1</strong></td>
+                <td class="text-right tnum">₹10,00,000</td>
+                <td class="text-right tnum">₹75,000</td>
+                <td class="text-right tnum negative-num">-₹23,400</td>
+                <td class="text-right tnum">₹51,600</td>
+                <td class="text-right tnum">₹10,51,600</td>
+                <td class="text-right tnum negative-num">-₹1,820</td>
+              </tr>
+              <tr>
+                <td><strong>Year 2</strong></td>
+                <td class="text-right tnum">₹10,51,600</td>
+                <td class="text-right tnum">₹78,870</td>
+                <td class="text-right tnum negative-num">-₹24,607</td>
+                <td class="text-right tnum">₹54,263</td>
+                <td class="text-right tnum">₹11,05,863</td>
+                <td class="text-right tnum negative-num">-₹7,450</td>
+              </tr>
+              <tr>
+                <td><strong>Year 3</strong></td>
+                <td class="text-right tnum">₹11,05,863</td>
+                <td class="text-right tnum">₹82,940</td>
+                <td class="text-right tnum negative-num">-₹25,877</td>
+                <td class="text-right tnum">₹57,063</td>
+                <td class="text-right tnum">₹11,62,926</td>
+                <td class="text-right tnum negative-num">-₹18,240</td>
+              </tr>
+              <tr>
+                <td><strong>Year 4</strong></td>
+                <td class="text-right tnum">₹11,62,926</td>
+                <td class="text-right tnum">₹87,219</td>
+                <td class="text-right tnum negative-num">-₹27,212</td>
+                <td class="text-right tnum">₹60,007</td>
+                <td class="text-right tnum">₹12,22,933</td>
+                <td class="text-right tnum negative-num">-₹35,900</td>
+              </tr>
+              <tr>
+                <td><strong>Year 5</strong></td>
+                <td class="text-right tnum">₹12,22,933</td>
+                <td class="text-right tnum">₹91,720</td>
+                <td class="text-right tnum negative-num">-₹28,617</td>
+                <td class="text-right tnum">₹63,103</td>
+                <td class="text-right tnum">₹12,86,036</td>
+                <td class="text-right tnum negative-num">-₹62,110</td>
+              </tr>
+              <tr>
+                <td><strong>Year 10 (Terminal)</strong></td>
+                <td class="text-right tnum">₹15,62,800</td>
+                <td class="text-right tnum">₹1,17,210</td>
+                <td class="text-right tnum negative-num">-₹36,570</td>
+                <td class="text-right tnum">₹80,640</td>
+                <td class="text-right tnum">₹20,61,032</td>
+                <td class="text-right tnum negative-num">-₹3,42,850</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>TOTALS (10Y)</td>
+                <td class="text-right tnum">₹10,00,000</td>
+                <td class="text-right tnum">₹15,40,182</td>
+                <td class="text-right tnum negative-num">-₹4,79,150</td>
+                <td class="text-right tnum">₹10,61,032</td>
+                <td class="text-right tnum">₹20,61,032</td>
+                <td class="text-right tnum negative-num">-₹3,42,850</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const label = document.getElementById("btnLabel");
+      const isLight = html.getAttribute("data-theme") === "light";
+
+      if (isLight) {
+        html.setAttribute("data-theme", "dark");
+        label.textContent = "Switch to Nordic Pine";
+      } else {
+        html.setAttribute("data-theme", "light");
+        label.textContent = "Switch to Obsidian & Champagne";
+      }
+    }
+
+    function switchChartView(mode) {
+      document.getElementById("btnWedge").classList.toggle("active", mode === "wedge");
+      document.getElementById("btnDrain").classList.toggle("active", mode === "drain");
+    }
+
+    function switchLedgerView(view) {
+      document.getElementById("viewAnnual").classList.toggle("active", view === "annual");
+      document.getElementById("viewQuarter").classList.toggle("active", view === "quarters");
+    }
+  </script>
+</body>
+</html>
